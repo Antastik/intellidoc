@@ -1,0 +1,40 @@
+{
+  "batch_id": "aa2a4c4e-65cd-4e6b-9892-1741c71984cc",
+  "timestamp": "2025-08-20 23:03:08",
+  "total_files": 3,
+  "processed_files": 3,
+  "successful": 3,
+  "partial": 0,
+  "failed": 0,
+  "total_processing_time": 4.217873573303223,
+  "average_processing_time": 1.405957857767741,
+  "results": [
+    {
+      "document_id": "6c737195-f928-458c-9514-417833951587",
+      "file_name": "sample_invoice_3.txt",
+      "status": "success",
+      "processing_time": 1.4084672927856445,
+      "entity_count": 5,
+      "text_length": 447,
+      "errors": []
+    },
+    {
+      "document_id": "e94354e8-7b49-45a4-99eb-b89fb87df40e",
+      "file_name": "sample_invoice_1.txt",
+      "status": "success",
+      "processing_time": 1.4049465656280518,
+      "entity_count": 5,
+      "text_length": 447,
+      "errors": []
+    },
+    {
+      "document_id": "7dc5850f-c871-4a27-bde4-48fde762f103",
+      "file_name": "sample_invoice_2.txt",
+      "status": "success",
+      "processing_time": 1.4044597148895264,
+      "entity_count": 5,
+      "text_length": 447,
+      "errors": []
+    }
+  ]
+}

@@ -175,6 +175,23 @@ class DocumentIngestor:
         except Exception as e:
             raise DocumentIngestionError(f"Failed to process DOCX {file_path}: {e}")
     
+    def process_txt(self, file_path: str, metadata: DocumentMetadata) -> str:
+        """Extract text from TXT file"""
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                content = file.read()
+            return content.strip()
+        except UnicodeDecodeError:
+            # Try with different encoding
+            try:
+                with open(file_path, 'r', encoding='latin-1') as file:
+                    content = file.read()
+                return content.strip()
+            except Exception as e:
+                raise DocumentIngestionError(f"Failed to process TXT {file_path}: {e}")
+        except Exception as e:
+            raise DocumentIngestionError(f"Failed to process TXT {file_path}: {e}")
+    
     def ingest_single_document(self, file_path: str) -> ProcessedDocument:
         """
         Ingest a single document
@@ -205,6 +222,9 @@ class DocumentIngestor:
             page_count = 1
         elif metadata.format == 'docx':
             content = self.process_docx(file_path, metadata)
+            page_count = 1
+        elif metadata.format == 'txt':
+            content = self.process_txt(file_path, metadata)
             page_count = 1
         else:
             raise DocumentIngestionError(f"Unsupported format: {metadata.format}")

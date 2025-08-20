@@ -1,0 +1,25 @@
+INVOICE #1000
+
+Date: January 15, 2024
+Invoice ID: INV-2024-1000
+
+Bill To:
+John Doe 1
+Email: john.doe1@example.com
+Phone: (555) 123-4567
+
+From:
+Acme Corporation
+123 Business Street
+New York, NY 10001
+Phone: (555) 123-0000
+
+Description                    Amount
+Consulting Services           $2500.00
+Software License             $1000.00
+Support Package              $500.00
+
+Total: $4000.00
+
+Payment Terms: Net 30 days
+Thank you for your business!

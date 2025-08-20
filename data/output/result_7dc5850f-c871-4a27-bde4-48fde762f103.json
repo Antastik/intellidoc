@@ -1,0 +1,168 @@
+{
+  "document_id": "7dc5850f-c871-4a27-bde4-48fde762f103",
+  "document_metadata": {
+    "file_path": "data\\input\\sample_invoice_2.txt",
+    "file_name": "sample_invoice_2.txt",
+    "file_size": 471,
+    "mime_type": "text/plain",
+    "format": "txt",
+    "pages": 1,
+    "created_at": "1755711086.1905468",
+    "modified_at": "1755711086.1905468"
+  },
+  "ocr_results": [
+    {
+      "text": "INVOICE #1001\n\nDate: January 16, 2024\nInvoice ID: INV-2024-1001\n\nBill To:\nJohn Doe 2\nEmail: john.doe2@example.com\nPhone: (555) 124-4568\n\nFrom:\nAcme Corporation\n123 Business Street\nNew York, NY 10001\nPhone: (555) 123-0000\n\nDescription                    Amount\nConsulting Services           $2600.00\nSoftware License             $1050.00\nSupport Package              $525.00\n\nTotal: $4175.00\n\nPayment Terms: Net 30 days\nThank you for your business!",
+      "confidence": 1.0,
+      "engine": "direct_text",
+      "processing_time": 0.0,
+      "word_boxes": null,
+      "metadata": {
+        "source": "direct_extraction"
+      }
+    }
+  ],
+  "nlp_results": [
+    {
+      "original_text": "INVOICE #1001\n\nDate: January 16, 2024\nInvoice ID: INV-2024-1001\n\nBill To:\nJohn Doe 2\nEmail: john.doe2@example.com\nPhone: (555) 124-4568\n\nFrom:\nAcme Corporation\n123 Business Street\nNew York, NY 10001\nPhone: (555) 123-0000\n\nDescription                    Amount\nConsulting Services           $2600.00\nSoftware License             $1050.00\nSupport Package              $525.00\n\nTotal: $4175.00\n\nPayment Terms: Net 30 days\nThank you for your business!",
+      "cleaned_text": "INVOICE #1001 Date: January 16, 2024 Invoice ID: INV-2024-1001 Bill To: John Doe 2 Email: john.doe2@example.com Phone: (555) 124-4568 From: Acme Corporation 123 Business Street New York, NY 10001 Phone: (555) 123-0000 Description Amount Consulting Services $2600.00 Software License $1050.00 Support Package $525.00 Total: $4175.00 Payment Terms: Net 30 days Thank you for your business!",
+      "entities": [
+        {
+          "text": "john.doe2@example.com",
+          "label": "EMAIL",
+          "start": 90,
+          "end": 111,
+          "confidence": 0.95,
+          "metadata": {
+            "extraction_method": "regex"
+          }
+        },
+        {
+          "text": "$2600.00",
+          "label": "MONEY",
+          "start": 257,
+          "end": 265,
+          "confidence": 0.9,
+          "metadata": {
+            "extraction_method": "regex"
+          }
+        },
+        {
+          "text": "$1050.00",
+          "label": "MONEY",
+          "start": 283,
+          "end": 291,
+          "confidence": 0.9,
+          "metadata": {
+            "extraction_method": "regex"
+          }
+        },
+        {
+          "text": "$525.00",
+          "label": "MONEY",
+          "start": 308,
+          "end": 315,
+          "confidence": 0.9,
+          "metadata": {
+            "extraction_method": "regex"
+          }
+        },
+        {
+          "text": "$4175.00",
+          "label": "MONEY",
+          "start": 323,
+          "end": 331,
+          "confidence": 0.9,
+          "metadata": {
+            "extraction_method": "regex"
+          }
+        }
+      ],
+      "classification": {
+        "label": "LABEL_0",
+        "confidence": 0.5150323510169983,
+        "categories": {
+          "LABEL_0": 0.5150323510169983,
+          "LABEL_1": 0.4849676787853241
+        }
+      },
+      "summary": "INVOICE #1001 Date: January 16, 2024 Invoice ID: INV-2024-1001 Bill To: John Doe 2 Email: john. doe2@example. com Phone: (555) 124-4568 From: Acme Corporation 123 Business Street New York, NY 10001 Phone: (555) 123-0000 Description Amount Consulting Services $2600.",
+      "keywords": [
+        "invoice",
+        "john",
+        "phone",
+        "business",
+        "date",
+        "january",
+        "bill",
+        "email",
+        "example",
+        "acme"
+      ],
+      "processing_time": 1.2668778896331787,
+      "metadata": {
+        "text_length": 387,
+        "entity_count": 5,
+        "keyword_count": 10,
+        "has_classification": true,
+        "processing_time": 1.2668778896331787
+      }
+    }
+  ],
+  "combined_text": "INVOICE #1001\n\nDate: January 16, 2024\nInvoice ID: INV-2024-1001\n\nBill To:\nJohn Doe 2\nEmail: john.doe2@example.com\nPhone: (555) 124-4568\n\nFrom:\nAcme Corporation\n123 Business Street\nNew York, NY 10001\nPhone: (555) 123-0000\n\nDescription                    Amount\nConsulting Services           $2600.00\nSoftware License             $1050.00\nSupport Package              $525.00\n\nTotal: $4175.00\n\nPayment Terms: Net 30 days\nThank you for your business!",
+  "final_entities": [
+    {
+      "text": "john.doe2@example.com",
+      "label": "EMAIL",
+      "start": 90,
+      "end": 111,
+      "confidence": 0.95,
+      "metadata": {
+        "extraction_method": "regex"
+      }
+    },
+    {
+      "text": "$2600.00",
+      "label": "MONEY",
+      "start": 257,
+      "end": 265,
+      "confidence": 0.9,
+      "metadata": {
+        "extraction_method": "regex"
+      }
+    },
+    {
+      "text": "$1050.00",
+      "label": "MONEY",
+      "start": 283,
+      "end": 291,
+      "confidence": 0.9,
+      "metadata": {
+        "extraction_method": "regex"
+      }
+    },
+    {
+      "text": "$525.00",
+      "label": "MONEY",
+      "start": 308,
+      "end": 315,
+      "confidence": 0.9,
+      "metadata": {
+        "extraction_method": "regex"
+      }
+    },
+    {
+      "text": "$4175.00",
+      "label": "MONEY",
+      "start": 323,
+      "end": 331,
+      "confidence": 0.9,
+      "metadata": {
+        "extraction_method": "regex"
+      }
+    }
+  ],
+  "processing_time": 1.4044597148895264,
+  "status": "success",
+  "errors": []
+}

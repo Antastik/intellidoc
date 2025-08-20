@@ -40,6 +40,7 @@ documents:
     - jpeg
     - tiff
     - docx
+    - txt
   
   max_file_size_mb: 50
   batch_size: 5
