@@ -1,0 +1,69 @@
+# IntelliDoc Configuration
+
+# OCR Settings
+ocr:
+  engines:
+    - tesseract  # Primary OCR engine
+    - paddleocr  # Fallback OCR engine
+  
+  tesseract:
+    config: "--oem 3 --psm 6"
+    languages: ["eng"]
+  
+  paddleocr:
+    use_angle_cls: true
+    lang: "en"
+    use_gpu: false
+
+# NLP Settings
+nlp:
+  models:
+    classification: "distilbert-base-uncased"
+    ner: "dbmdz/bert-large-cased-finetuned-conll03-english"
+    embeddings: "sentence-transformers/all-MiniLM-L6-v2"
+  
+  # Entity types to extract
+  entity_types:
+    - PERSON
+    - ORG
+    - MONEY
+    - DATE
+    - GPE  # Geopolitical entities
+    - PRODUCT
+
+# Document Processing
+documents:
+  supported_formats:
+    - pdf
+    - png
+    - jpg
+    - jpeg
+    - tiff
+    - docx
+  
+  max_file_size_mb: 50
+  batch_size: 5
+
+# Pipeline Settings
+pipeline:
+  max_workers: 4
+  timeout_seconds: 300
+  retry_attempts: 3
+  
+# Output Settings
+output:
+  format: "json"
+  include_confidence: true
+  include_metadata: true
+  
+# Paths
+paths:
+  input: "data/input"
+  output: "data/output"
+  models: "models"
+  temp: "temp"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "{time} | {level} | {message}"
