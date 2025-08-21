@@ -9,13 +9,14 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install dependencies globally (not --user)
+# Copy requirements and install dependencies globally
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
- && pip install --no-cache-dir -r requirements.txt \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel --root-user-action=ignore \
+ && pip install --no-cache-dir -r requirements.txt --root-user-action=ignore \
  && pip cache purge
+
 
 # ============================================
 # Production stage
@@ -27,7 +28,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Install runtime system dependencies
+# Install runtime system dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
@@ -55,12 +56,12 @@ RUN mkdir -p data/uploads data/output data/input temp && \
 
 USER intellidoc
 
-# Expose port (Railway will use $PORT env)
+# Expose port (Railway will inject $PORT)
 EXPOSE 8000
 
-# Healthcheck
+# Healthcheck (update if your endpoint differs)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
+    CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Run uvicorn directly (no sh -c needed)
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run uvicorn on Railway's $PORT
+CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT} --workers 2"]
