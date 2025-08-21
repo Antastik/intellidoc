@@ -4,23 +4,16 @@ FROM python:3.10-slim
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+FROM python:3.10-slim
 
-# Install system dependencies
+# Skip problematic packages initially
 RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    tesseract-ocr-eng \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
     curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install tesseract separately if needed
+RUN apt-get update && apt-get install -y tesseract-ocr || true
+
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
