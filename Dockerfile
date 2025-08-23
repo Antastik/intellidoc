@@ -21,9 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean
 
 # Copy requirements and install Python packages
-COPY requirements-railway.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-railway.txt && \
     pip cache purge
 
 # Copy application code (only necessary files)
