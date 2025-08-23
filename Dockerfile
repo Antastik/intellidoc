@@ -1,67 +1,52 @@
-# ============================================
-# Build stage
-# ============================================
-FROM python:3.10-slim as builder
+# Use Python slim image for smaller size
+FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install build dependencies (for compiling packages)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
- && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install dependencies globally
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel --root-user-action=ignore \
- && pip install --no-cache-dir -r requirements.txt --root-user-action=ignore \
- && pip cache purge
-
-
-# ============================================
-# Production stage
-# ============================================
-FROM python:3.10-slim
-
-# Environment variables
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install runtime system dependencies only
+# Install system dependencies (minimal)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     tesseract-ocr-eng \
-    libgl1 \
+    libgl1-mesa-glx \
     libglib2.0-0 \
     curl \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Copy installed Python packages from builder
-COPY --from=builder /usr/local /usr/local
+# Copy requirements and install Python packages
+COPY requirements-railway.txt ./requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip cache purge
 
-# Set working dir
-WORKDIR /app
-
-# Copy only necessary application files
+# Copy application code (only necessary files)
 COPY src/ ./src/
 COPY config/ ./config/
-COPY requirements.txt ./
+COPY intellidoc.py ./
+COPY start_api.py ./
 
-# Create runtime dirs and non-root user
-RUN mkdir -p data/uploads data/output data/input temp && \
-    useradd --create-home --shell /bin/bash intellidoc && \
+# Create necessary directories
+RUN mkdir -p data/uploads data/output data/input models temp && \
+    chmod 755 data/uploads data/output data/input models temp
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash intellidoc && \
     chown -R intellidoc:intellidoc /app
-
 USER intellidoc
 
-# Expose port (Railway will inject $PORT)
+# Expose port (Railway will override this)
 EXPOSE 8000
 
-# Healthcheck (update if your endpoint differs)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:${PORT}/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
-# Run uvicorn on Railway's $PORT
-CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT} --workers 2"]
+# Railway-compatible command
+CMD ["sh", "-c", "uvicorn src.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
