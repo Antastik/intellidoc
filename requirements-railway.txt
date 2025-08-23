@@ -1,0 +1,42 @@
+# ==============================================
+# CORE API (Essential)
+# ==============================================
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+python-multipart
+
+# ==============================================
+# LIGHTWEIGHT DOCUMENT PROCESSING
+# ==============================================
+# Use headless OpenCV (much smaller)
+opencv-python-headless>=4.8.0
+Pillow>=10.0.0
+pytesseract>=0.3.10
+
+# Document formats
+PyPDF2>=3.0.0
+python-docx>=0.8.11
+
+# ==============================================
+# LIGHTWEIGHT NLP (No heavy ML models)
+# ==============================================
+# Use spaCy without large models
+spacy>=3.6.0
+nltk>=3.8.0
+
+# Skip these heavy ones for now:
+# torch - 2.5GB
+# paddlepaddle - 2GB  
+# transformers - 2GB
+# scikit-learn - 300MB
+
+# ==============================================
+# UTILITIES
+# ==============================================
+python-dotenv>=1.0.0
+click>=8.1.0
+tqdm>=4.65.0
+loguru>=0.7.0
+pyyaml>=6.0
+numpy>=1.24.0
