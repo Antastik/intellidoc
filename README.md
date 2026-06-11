@@ -1,5 +1,7 @@
 # IntelliDoc — Source-Citing RAG over your PDFs
 
+<!-- LIVE_URL --> <!-- Live demo: https://intellidoc.onrender.com  (added after first deploy) -->
+
 Ask natural-language questions about your documents and get answers **with
 citations back to the exact page they came from**. Built as a clean FastAPI
 service with a pluggable model layer — run it on OpenAI, Google Gemini, or fully
@@ -117,6 +119,29 @@ EMBEDDING_PROVIDER=testing LLM_PROVIDER=testing python -m eval.run_eval
 docker build -t intellidoc .
 docker run -p 8000:8000 --env-file .env -v $(pwd)/data:/data intellidoc
 ```
+
+The image uses `requirements-deploy.txt` (core + OpenAI/Gemini, no PyTorch) to
+stay small enough for free hosting tiers. The container binds to `$PORT` if the
+host sets one, else `8000`.
+
+## Deploy (Render free tier)
+
+This repo ships a [`render.yaml`](./render.yaml) blueprint, so deploying is
+near one-click:
+
+1. Push this repo to GitHub (already done if you're reading it there).
+2. Get a free **Gemini API key** from
+   [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+3. On [render.com](https://render.com): **New → Blueprint**, pick this repo.
+   Render reads `render.yaml` and provisions a free Docker web service.
+4. When prompted, paste your key into the `GEMINI_API_KEY` env var (it is
+   marked `sync: false`, so it never lives in git).
+5. Deploy. Your live URL will be `https://<service-name>.onrender.com`.
+
+> Notes: the free tier sleeps after ~15 min idle (first request after sleep is
+> slow to wake), and the FAISS store is ephemeral — uploaded PDFs reset on
+> redeploy/sleep, which is expected for a public demo. For a persistent corpus,
+> attach a Render disk (paid) or swap the store for pgvector/Qdrant.
 
 ## Project layout
 
