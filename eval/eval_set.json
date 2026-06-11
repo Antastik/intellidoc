@@ -1,0 +1,24 @@
+{
+  "description": "Small retrieval-quality eval set. Each item gives a question and keywords that a correct answer's retrieved context should contain. Extend with your own docs + Q/A.",
+  "corpus": [
+    {
+      "source": "company_handbook.txt",
+      "text": "Employees are entitled to 20 days of paid annual leave per calendar year. Unused leave may be carried over, up to a maximum of 5 days, into the following year. Sick leave is separate and capped at 10 days per year."
+    },
+    {
+      "source": "company_handbook.txt",
+      "text": "The standard probation period for new hires is three months. During probation, either party may terminate the contract with two weeks notice. After probation, the notice period extends to one month."
+    },
+    {
+      "source": "security_policy.txt",
+      "text": "All production secrets must be stored in the company vault. Hard-coding API keys in source code is strictly prohibited. Access to the vault requires multi-factor authentication and is reviewed quarterly."
+    }
+  ],
+  "questions": [
+    {"question": "How many days of paid annual leave do employees get?", "expected_keywords": ["20", "annual leave"]},
+    {"question": "How much unused leave can be carried over?", "expected_keywords": ["5", "carried over"]},
+    {"question": "What is the probation period for new hires?", "expected_keywords": ["three months", "probation"]},
+    {"question": "Where must production secrets be stored?", "expected_keywords": ["vault"]},
+    {"question": "Is hard-coding API keys allowed?", "expected_keywords": ["prohibited"]}
+  ]
+}

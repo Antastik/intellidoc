@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IntelliDoc — Ask your documents</title>
+<style>
+  :root{--bg:#0f1419;--panel:#1a212b;--border:#2a3441;--text:#e6edf3;--dim:#9aa7b4;--accent:#4cc2ff;--good:#7df0a3;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);}
+  header{padding:18px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+  header h1{font-size:18px;margin:0;}
+  header .badge{font-size:11px;color:var(--dim);border:1px solid var(--border);padding:3px 8px;border-radius:20px;}
+  main{max-width:880px;margin:0 auto;padding:24px;display:grid;gap:20px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin:0 0 12px;}
+  input[type=file],input[type=text]{width:100%;background:#0f1419;color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:14px;}
+  .row{display:flex;gap:10px;}
+  button{background:var(--accent);color:#06222f;border:0;border-radius:6px;padding:10px 16px;font-weight:600;cursor:pointer;}
+  button:disabled{opacity:.5;cursor:default;}
+  .docs{display:flex;flex-wrap:wrap;gap:8px;}
+  .doc{font-size:12px;background:#0f1419;border:1px solid var(--border);border-radius:20px;padding:4px 10px;color:var(--dim);}
+  #answer{white-space:pre-wrap;line-height:1.55;}
+  .cite{border-left:2px solid var(--accent);padding:8px 12px;margin:8px 0;background:#0f1419;border-radius:0 6px 6px 0;}
+  .cite .meta{font-size:12px;color:var(--accent);margin-bottom:4px;}
+  .cite .snip{font-size:13px;color:var(--dim);}
+  .muted{color:var(--dim);font-size:13px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>IntelliDoc</h1>
+  <span class="badge" id="status">connecting…</span>
+</header>
+<main>
+  <div class="card">
+    <h2>1 · Upload PDFs</h2>
+    <div class="row">
+      <input type="file" id="files" accept="application/pdf" multiple />
+      <button id="uploadBtn">Upload</button>
+    </div>
+    <p class="muted" id="uploadMsg"></p>
+    <div class="docs" id="docs"></div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Ask a question</h2>
+    <div class="row">
+      <input type="text" id="question" placeholder="What does the document say about…?" />
+      <button id="askBtn">Ask</button>
+    </div>
+  </div>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <h2>Answer</h2>
+    <div id="answer"></div>
+    <h2 style="margin-top:18px;">Sources</h2>
+    <div id="citations"></div>
+  </div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+async function refresh(){
+  try{
+    const h = await fetch('/api/health').then(r=>r.json());
+    $('status').textContent = `${h.llm_provider} · ${h.documents} docs · ${h.chunks} chunks`;
+    const docs = await fetch('/api/documents').then(r=>r.json());
+    $('docs').innerHTML = docs.map(d=>`<span class="doc">${d.source} · ${d.pages}p · ${d.chunks} chunks</span>`).join('');
+  }catch(e){ $('status').textContent = 'offline'; }
+}
+
+$('uploadBtn').onclick = async () => {
+  const fs = $('files').files;
+  if(!fs.length){ $('uploadMsg').textContent = 'Pick at least one PDF.'; return; }
+  const fd = new FormData();
+  for(const f of fs) fd.append('files', f);
+  $('uploadBtn').disabled = true; $('uploadMsg').textContent = 'Uploading & indexing…';
+  try{
+    const r = await fetch('/api/upload', {method:'POST', body:fd});
+    if(!r.ok){ throw new Error((await r.json()).detail); }
+    const data = await r.json();
+    $('uploadMsg').textContent = `Indexed ${data.documents.length} document(s).`;
+    refresh();
+  }catch(e){ $('uploadMsg').textContent = 'Error: ' + e.message; }
+  finally{ $('uploadBtn').disabled = false; }
+};
+
+$('askBtn').onclick = async () => {
+  const q = $('question').value.trim();
+  if(!q) return;
+  $('askBtn').disabled = true;
+  $('resultCard').style.display = 'block';
+  $('answer').textContent = 'Thinking…'; $('citations').innerHTML = '';
+  try{
+    const r = await fetch('/api/query', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question:q})});
+    const data = await r.json();
+    $('answer').textContent = data.answer;
+    $('citations').innerHTML = data.citations.map((c,i)=>`
+      <div class="cite">
+        <div class="meta">[${i+1}] ${c.source}${c.page?(' · p.'+c.page):''} · score ${c.score}</div>
+        <div class="snip">${c.snippet}</div>
+      </div>`).join('') || '<p class="muted">No sources.</p>';
+  }catch(e){ $('answer').textContent = 'Error: ' + e.message; }
+  finally{ $('askBtn').disabled = false; }
+};
+
+$('question').addEventListener('keydown', e=>{ if(e.key==='Enter') $('askBtn').click(); });
+refresh();
+</script>
+</body>
+</html>

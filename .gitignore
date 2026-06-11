@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+data/
+*.faiss
+*.pkl
+.pytest_cache/
+pytest-cache-files-*/
+.claude/
+.DS_Store
+
+# private working notes — do not publish
+HANDOFF.md
