@@ -1,7 +1,9 @@
 # --- Core (always required) ---
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
-pydantic==2.9.2
+# google-genai 2.x needs pydantic>=2.12.5 and httpx>=0.28.1; keep these in
+# lock-step with requirements-deploy.txt.
+pydantic==2.12.5
 pydantic-settings==2.5.2
 python-multipart==0.0.12
 numpy==1.26.4
@@ -9,13 +11,13 @@ faiss-cpu==1.8.0
 pypdf==5.0.1
 
 # --- Providers (optional; install what you use) ---
-# OpenAI
-openai==1.51.0
-# Google Gemini
-google-generativeai==0.8.3
+# OpenAI (>=1.55.3 required with httpx 0.28; 1.51 breaks on the removed `proxies` kwarg)
+openai==1.109.1
+# Google Gemini (replaces the deprecated google-generativeai package)
+google-genai==2.33.0
 # Local embeddings (sentence-transformers) + local LLM via Ollama HTTP
 sentence-transformers==3.1.1
-httpx==0.27.2
+httpx==0.28.1
 
 # --- Dev / test ---
 pytest==8.3.3
