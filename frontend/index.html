@@ -62,51 +62,135 @@
 <script>
 const $ = (id) => document.getElementById(id);
 
+// --- DOM helpers: everything from the API is untrusted text, never markup. ---
+function clear(node){ while(node.firstChild) node.removeChild(node.firstChild); }
+function el(tag, cls, text){
+  const n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(text !== undefined && text !== null) n.textContent = String(text);
+  return n;
+}
+
+// --- Shared response parser. Reads the body once, tolerates JSON, plain text
+// and HTML gateway pages, and turns any non-2xx into an Error with a useful
+// message (FastAPI `detail` string, validation arrays, or the HTTP status). ---
+async function readResponse(r){
+  const text = await r.text();
+  const ctype = (r.headers && typeof r.headers.get === 'function' && r.headers.get('content-type')) || '';
+  const looksHtml = /text\/html/i.test(ctype) || /^\s*</.test(text);
+  let data = null;
+  if(text && !looksHtml){ try{ data = JSON.parse(text); }catch(_){ data = null; } }
+  if(r.ok){
+    if(data === null) throw new Error(`Unexpected non-JSON response from server (HTTP ${r.status}).`);
+    return data;
+  }
+  throw new Error(errorMessage(r, data, text, looksHtml));
+}
+
+function errorMessage(r, data, text, looksHtml){
+  const status = `HTTP ${r.status}${r.statusText ? ' ' + r.statusText : ''}`;
+  let detail = data && typeof data === 'object' ? data.detail : null;
+  if(Array.isArray(detail)){
+    detail = detail.map(d => {
+      if(!d || typeof d !== 'object') return String(d);
+      const loc = Array.isArray(d.loc) ? d.loc.filter(p => p !== 'body').join('.') : '';
+      return [loc, d.msg].filter(Boolean).join(': ') || JSON.stringify(d);
+    }).join('; ');
+  }else if(detail && typeof detail === 'object'){
+    detail = JSON.stringify(detail);
+  }
+  if(typeof detail === 'string' && detail.trim()) return `${detail.trim()} (${status})`;
+  if(data === null && text && !looksHtml) return `${text.trim().slice(0, 200)} (${status})`;
+  return `${status} — the server returned an unexpected response.`;
+}
+
+async function getJSON(url){ return readResponse(await fetch(url)); }
+
+function renderDocs(docs){
+  const box = $('docs');
+  clear(box);
+  if(!Array.isArray(docs)) return;
+  for(const d of docs){
+    box.appendChild(el('span', 'doc', `${d.source} · ${d.pages}p · ${d.chunks} chunks`));
+  }
+}
+
+function renderCitations(citations){
+  const box = $('citations');
+  clear(box);
+  if(!Array.isArray(citations) || !citations.length){
+    box.appendChild(el('p', 'muted', 'No sources.'));
+    return;
+  }
+  citations.forEach((c, i) => {
+    const cite = el('div', 'cite');
+    cite.appendChild(el('div', 'meta', `[${i+1}] ${c.source}${c.page?(' · p.'+c.page):''} · score ${c.score}`));
+    cite.appendChild(el('div', 'snip', c.snippet));
+    box.appendChild(cite);
+  });
+}
+
 async function refresh(){
   try{
-    const h = await fetch('/api/health').then(r=>r.json());
+    const h = await getJSON('/api/health');
     $('status').textContent = `${h.llm_provider} · ${h.documents} docs · ${h.chunks} chunks`;
-    const docs = await fetch('/api/documents').then(r=>r.json());
-    $('docs').innerHTML = docs.map(d=>`<span class="doc">${d.source} · ${d.pages}p · ${d.chunks} chunks</span>`).join('');
+    renderDocs(await getJSON('/api/documents'));
   }catch(e){ $('status').textContent = 'offline'; }
 }
 
+let uploading = false;
 $('uploadBtn').onclick = async () => {
+  if(uploading) return;
   const fs = $('files').files;
-  if(!fs.length){ $('uploadMsg').textContent = 'Pick at least one PDF.'; return; }
+  if(!fs || !fs.length){ $('uploadMsg').textContent = 'Pick at least one PDF.'; return; }
   const fd = new FormData();
   for(const f of fs) fd.append('files', f);
+  uploading = true;
   $('uploadBtn').disabled = true; $('uploadMsg').textContent = 'Uploading & indexing…';
   try{
     const r = await fetch('/api/upload', {method:'POST', body:fd});
-    if(!r.ok){ throw new Error((await r.json()).detail); }
-    const data = await r.json();
-    $('uploadMsg').textContent = `Indexed ${data.documents.length} document(s).`;
-    refresh();
-  }catch(e){ $('uploadMsg').textContent = 'Error: ' + e.message; }
-  finally{ $('uploadBtn').disabled = false; }
+    const data = await readResponse(r);
+    const n = data && Array.isArray(data.documents) ? data.documents.length : 0;
+    $('uploadMsg').textContent = `Indexed ${n} document(s).`;
+  }catch(e){ $('uploadMsg').textContent = 'Error: ' + ((e && e.message) || String(e)); }
+  finally{
+    uploading = false;
+    $('uploadBtn').disabled = false;
+    refresh(); // reflect whatever the backend actually committed, success or not
+  }
 };
 
+let asking = false;
 $('askBtn').onclick = async () => {
+  if(asking) return;
   const q = $('question').value.trim();
   if(!q) return;
+  asking = true;
   $('askBtn').disabled = true;
   $('resultCard').style.display = 'block';
-  $('answer').textContent = 'Thinking…'; $('citations').innerHTML = '';
+  $('answer').textContent = 'Thinking…'; clear($('citations'));
   try{
     const r = await fetch('/api/query', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question:q})});
-    const data = await r.json();
+    const data = await readResponse(r);
+    if(!data || typeof data.answer !== 'string' || !Array.isArray(data.citations)){
+      throw new Error('Malformed answer from server.');
+    }
     $('answer').textContent = data.answer;
-    $('citations').innerHTML = data.citations.map((c,i)=>`
-      <div class="cite">
-        <div class="meta">[${i+1}] ${c.source}${c.page?(' · p.'+c.page):''} · score ${c.score}</div>
-        <div class="snip">${c.snippet}</div>
-      </div>`).join('') || '<p class="muted">No sources.</p>';
-  }catch(e){ $('answer').textContent = 'Error: ' + e.message; }
-  finally{ $('askBtn').disabled = false; }
+    renderCitations(data.citations);
+  }catch(e){
+    $('answer').textContent = 'Error: ' + ((e && e.message) || String(e));
+    clear($('citations'));
+  }finally{
+    asking = false;
+    $('askBtn').disabled = false;
+  }
 };
 
-$('question').addEventListener('keydown', e=>{ if(e.key==='Enter') $('askBtn').click(); });
+$('question').addEventListener('keydown', e=>{
+  if(e.key !== 'Enter' || e.isComposing) return;
+  e.preventDefault();
+  if(!asking && !$('askBtn').disabled) $('askBtn').click();
+});
 refresh();
 </script>
 </body>
