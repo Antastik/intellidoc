@@ -28,9 +28,11 @@ offline with local models, by changing one line in `.env`.
   corpus survives restarts.
 - **Evaluation harness.** `eval/run_eval.py` measures retrieval Hit@k and answer
   keyword-recall, so "did I make it better?" is a number, not a vibe.
-- **Tested.** `pytest` covers chunking, retrieval, persistence, and the
-  empty-store edge case — all runnable with **no API keys** via a deterministic
-  `testing` provider.
+- **Tested.** `pytest` covers chunking, retrieval, persistence, the HTTP API
+  end-to-end (upload → list → cited query, bad/scanned PDFs, document filters,
+  provider failures, concurrent uploads) and the vendor SDK adapters via faked
+  clients — all runnable with **no API keys** via a deterministic `testing`
+  provider.
 
 ## Architecture
 
@@ -57,7 +59,7 @@ offline with local models, by changing one line in `.env`.
 ## Quick start
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+python3.11 -m venv .venv && source .venv/bin/activate   # Python 3.11 or 3.12
 pip install -r requirements.txt
 cp .env.example .env          # then set your provider + key
 
@@ -81,9 +83,25 @@ EMBEDDING_PROVIDER=gemini
 # Fully local: Ollama for the LLM + sentence-transformers for embeddings
 LLM_PROVIDER=local
 EMBEDDING_PROVIDER=local
+
+# No keys at all (smoke tests / CI): hashing embeddings + an echo stub LLM
+LLM_PROVIDER=testing
+EMBEDDING_PROVIDER=testing
 ```
 
 > Tip: you can mix them, e.g. local embeddings (free) + Gemini for generation.
+
+> **`testing` is not a model.** It returns `[echo] <first context line>` instead
+> of a real answer and uses a bag-of-words hash as the embedding. It exists so
+> `pytest`/the eval harness run with zero secrets — don't judge answer quality
+> with it.
+
+Gemini runs on the `google-genai` SDK with the documented rolling alias
+`gemini-flash-latest` and `gemini-embedding-001` (truncated to
+`GEMINI_EMBEDDING_DIM=768` via `output_dimensionality`; documents and queries use
+the `RETRIEVAL_DOCUMENT` / `RETRIEVAL_QUERY` task types). OpenAI vector sizes
+come from a built-in map (`text-embedding-3-small/large`, `ada-002`); set
+`OPENAI_EMBEDDING_DIM` for other models or to shrink `text-embedding-3-*`.
 
 ## API
 
@@ -106,12 +124,38 @@ curl -X POST http://localhost:8000/api/query \
 ## Tests & evaluation
 
 ```bash
-# Unit tests — no keys needed
+# Unit + API tests — no keys needed
 pytest
+
+# Frontend tests (XSS escaping, error rendering) — Node >= 18, no npm install
+node --test tests/test_frontend.cjs
 
 # Retrieval eval with the dependency-free providers
 EMBEDDING_PROVIDER=testing LLM_PROVIDER=testing python -m eval.run_eval
 ```
+
+## Troubleshooting
+
+- **Re-index after changing embedding models.** The FAISS index in `DATA_DIR`
+  only makes sense for the model that produced it. Switching models (including
+  the migration from `text-embedding-004` to `gemini-embedding-001`) requires a
+  fresh `DATA_DIR` **even when the dimension is unchanged** — same size, different
+  vector space, garbage similarity scores. If the dimension *does* differ, the
+  app refuses to start with a clear error rather than silently loading or
+  deleting the old index; point `DATA_DIR` somewhere new or remove
+  `index.faiss` + `meta.pkl` yourself.
+- **`502 provider_error`.** The upstream model/embedding call failed (bad key,
+  retired model name, quota, safety block, empty response). The response body is
+  deliberately generic — `{"detail": ..., "error": "provider_error", "stage":
+  "embedding" | "query"}` — and the real cause is in the server log.
+- **Startup fails with a settings error.** `CHUNK_SIZE` and `TOP_K` must be
+  positive and `CHUNK_OVERLAP` must be smaller than `CHUNK_SIZE`.
+- **`422` on upload.** The file is not a parseable PDF, or it has no extractable
+  text (scanned images need OCR first). Multi-file uploads are all-or-nothing:
+  one bad file rejects the batch and nothing is indexed.
+- **Dependency pins.** `google-genai` 2.x requires `httpx>=0.28` and
+  `pydantic>=2.12`; `openai` 1.51 does not work with `httpx` 0.28, hence the
+  bumped pins in both requirements files. Install from a clean venv.
 
 ## Docker
 

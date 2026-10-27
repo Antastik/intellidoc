@@ -16,9 +16,11 @@ services:
       - key: EMBEDDING_PROVIDER
         value: gemini
       - key: GEMINI_LLM_MODEL
-        value: gemini-1.5-flash
+        value: gemini-flash-latest
       - key: GEMINI_EMBEDDING_MODEL
-        value: text-embedding-004
+        value: gemini-embedding-001
+      - key: GEMINI_EMBEDDING_DIM
+        value: "768"
       # Paste your key in the Render dashboard — never committed.
       - key: GEMINI_API_KEY
         sync: false

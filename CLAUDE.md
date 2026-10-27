@@ -39,11 +39,15 @@ cp .env.example .env          # set LLM_PROVIDER + EMBEDDING_PROVIDER + key
 
 uvicorn app.main:app --reload # http://localhost:8000
 
-pytest                                                  # unit tests (no keys)
+pytest                                                  # unit + API tests (no keys)
+node --test tests/test_frontend.cjs                     # frontend XSS/error-handling tests (Node >= 18)
 EMBEDDING_PROVIDER=testing LLM_PROVIDER=testing python -m eval.run_eval
 ```
-Last verified: **6/6 tests pass; eval retrieval Hit@4 = 100%** (echo LLM, so
-answer-recall is 0 by design — use a real provider for meaningful answer scores).
+Use Python 3.11 or 3.12 (`numpy==1.26.4` / `faiss-cpu==1.8.0` ship no wheels
+for newer interpreters). Last verified: **40/40 pytest, 19/19 node, eval
+retrieval Hit@4 = 100%** (echo LLM, so answer-recall is 0 by design — use a
+real provider for meaningful answer scores). Gemini/OpenAI adapters are covered
+with faked SDK clients; re-verify against live keys after changing model names.
 
 ## Conventions
 - Python 3.11, type hints, `from __future__ import annotations`.
