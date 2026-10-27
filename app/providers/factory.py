@@ -10,10 +10,14 @@ def build_embedding_provider(s: Settings) -> EmbeddingProvider:
     provider = s.embedding_provider.lower()
     if provider == "openai":
         from .openai_provider import OpenAIEmbeddings
-        return OpenAIEmbeddings(s.openai_api_key, s.openai_embedding_model)
+        return OpenAIEmbeddings(
+            s.openai_api_key, s.openai_embedding_model, dim=s.openai_embedding_dim
+        )
     if provider == "gemini":
         from .gemini_provider import GeminiEmbeddings
-        return GeminiEmbeddings(s.gemini_api_key, s.gemini_embedding_model)
+        return GeminiEmbeddings(
+            s.gemini_api_key, s.gemini_embedding_model, dim=s.gemini_embedding_dim
+        )
     if provider == "local":
         from .local_provider import LocalEmbeddings
         return LocalEmbeddings(s.local_embedding_model)
