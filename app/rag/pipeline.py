@@ -6,8 +6,10 @@ sources as [1], [2], ... which map back to the returned Citation list.
 """
 from __future__ import annotations
 
+from typing import Any
+
 from ..models import Citation, QueryResponse
-from ..providers.base import EmbeddingProvider, LLMProvider
+from ..providers.base import EmbeddingProvider, LLMProvider, ProviderError
 from .store import VectorStore
 
 SYSTEM_PROMPT = (
@@ -19,7 +21,7 @@ SYSTEM_PROMPT = (
 )
 
 
-def _build_context(results: list[tuple[dict, float]]) -> str:
+def _build_context(results: list[tuple[dict[str, Any], float]]) -> str:
     blocks = []
     for i, (meta, _score) in enumerate(results, start=1):
         loc = f"{meta['source']}"
@@ -51,15 +53,19 @@ class RAGPipeline:
         self, question: str, top_k: int | None = None, doc_ids: list[str] | None = None
     ) -> QueryResponse:
         k = top_k or self.top_k
-        q_vec = self.embedder.embed_one(question)
-        results = self.store.search(q_vec, k, doc_ids=doc_ids)
-
-        if not results:
-            return QueryResponse(
-                answer="I don't have any documents indexed yet, so I can't answer that.",
-                citations=[],
-                model=self.llm.model,
+        if self.store.total_chunks == 0:
+            return self._no_answer(
+                "I don't have any documents indexed yet, so I can't answer that."
             )
+        if doc_ids is not None and not self.store.has_any_doc(doc_ids):
+            return self._no_answer(
+                "None of the selected documents are in the index, so I can't answer that."
+            )
+
+        q_vec = self.embedder.embed_query(question)
+        results = self.store.search(q_vec, k, doc_ids=doc_ids)
+        if not results:
+            return self._no_answer("I couldn't find any relevant passages for that question.")
 
         context = _build_context(results)
         user_prompt = (
@@ -68,6 +74,8 @@ class RAGPipeline:
             "Answer with inline citations like [1]."
         )
         answer = self.llm.complete(SYSTEM_PROMPT, user_prompt)
+        if not answer or not answer.strip():
+            raise ProviderError(f"LLM provider {self.llm.name!r} returned an empty answer.")
 
         citations = [
             Citation(
@@ -81,3 +89,6 @@ class RAGPipeline:
             for meta, score in results
         ]
         return QueryResponse(answer=answer, citations=citations, model=self.llm.model)
+
+    def _no_answer(self, message: str) -> QueryResponse:
+        return QueryResponse(answer=message, citations=[], model=self.llm.model)
